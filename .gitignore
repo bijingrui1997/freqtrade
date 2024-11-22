@@ -1,5 +1,5 @@
 # Freqtrade rules
-config*.json
+# config*.json
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
@@ -7,10 +7,12 @@ logfile.txt
 user_data/*
 !user_data/strategies/
 !user_data/strategies/*.py
+!user_data/config*.json
+!user_data/config.json
+!user_data/config_adaptive.json
 user_data/logs/*
 user_data/data/*
 user_data/backtest_results/*
-user_data/config.json
 freqtrade-plot.html
 freqtrade-profit-plot.html
 freqtrade/rpc/api_server/ui/*
