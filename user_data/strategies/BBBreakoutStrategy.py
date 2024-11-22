@@ -39,6 +39,21 @@ class BBBreakoutStrategy(IStrategy):
     bb_period = IntParameter(10, 30, default=20, space="buy", optimize=True)
     bb_std = IntParameter(1, 3, default=2, space="buy", optimize=True)
 
+    plot_config = {
+        "main_plot": {
+            "BB布林上轨": {"color": "red"},
+            "BB布林中轨": {"color": "blue"},
+            "BB布林下轨": {"color": "red"},
+        },
+        "subplots": {
+            "指标": {
+                "带宽": {"color": "yellow"},
+                "成交量比例": {"color": "orange"},
+                "title": "Indicators",
+            }
+        },
+    }
+
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
         logger.info(f"\n{'='*80}\n开始处理币种: {pair}\n{'='*80}")
@@ -46,9 +61,7 @@ class BBBreakoutStrategy(IStrategy):
 
         # 1. 计算布林带
         bb = qtpylib.bollinger_bands(
-            dataframe["close"],
-            window=self.bb_period.value,
-            stds=self.bb_std.value
+            dataframe["close"], window=self.bb_period.value, stds=self.bb_std.value
         )
         logger.info(f"{pair} - 布林带参数: 周期={self.bb_period.value}, 倍数={self.bb_std.value}")
 
@@ -86,16 +99,16 @@ class BBBreakoutStrategy(IStrategy):
 
         # 1. 多头入场条件
         long_cond = (
-            (dataframe["close"] > dataframe["布林上轨"]) &
-            (dataframe["close"].shift(1) <= dataframe["布林上轨"].shift(1)) &
-            (dataframe["成交量比例"] > 1.5)
+            (dataframe["close"] > dataframe["布林上轨"])
+            & (dataframe["close"].shift(1) <= dataframe["布林上轨"].shift(1))
+            & (dataframe["成交量比例"] > 1.5)
         )
 
         # 2. 空头入场条件
         short_cond = (
-            (dataframe["close"] < dataframe["布林下轨"]) &
-            (dataframe["close"].shift(1) >= dataframe["布林下轨"].shift(1)) &
-            (dataframe["成交量比例"] > 1.5)
+            (dataframe["close"] < dataframe["布林下轨"])
+            & (dataframe["close"].shift(1) >= dataframe["布林下轨"].shift(1))
+            & (dataframe["成交量比例"] > 1.5)
         )
 
         # 3. 设置信号
@@ -119,15 +132,13 @@ class BBBreakoutStrategy(IStrategy):
         logger.info(f"\n{'-'*40}\n{pair} - 开始计算出场信号\n{'-'*40}")
 
         # 1. 多头出场条件
-        exit_long_cond = (
-            (dataframe["close"] < dataframe["布林中轨"]) &
-            (dataframe["close"].shift(1) >= dataframe["布林中轨"].shift(1))
+        exit_long_cond = (dataframe["close"] < dataframe["布林中轨"]) & (
+            dataframe["close"].shift(1) >= dataframe["布林中轨"].shift(1)
         )
 
         # 2. 空头出场条件
-        exit_short_cond = (
-            (dataframe["close"] > dataframe["布林中轨"]) &
-            (dataframe["close"].shift(1) <= dataframe["布林中轨"].shift(1))
+        exit_short_cond = (dataframe["close"] > dataframe["布林中轨"]) & (
+            dataframe["close"].shift(1) <= dataframe["布林中轨"].shift(1)
         )
 
         # 3. 设置信号

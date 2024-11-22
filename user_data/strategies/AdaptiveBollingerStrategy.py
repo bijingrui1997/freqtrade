@@ -37,6 +37,20 @@ class AdaptiveBollingerStrategy(IStrategy):
     # 布林带参数
     bb_period = IntParameter(20, 50, default=40, space="buy", optimize=True)
 
+    # 添加绘图配置
+    plot_config = {
+        "main_plot": {
+            # 主图显示自适应布林带
+            "自适应布林上轨": {"color": "red"},
+            "自适应布林中轨": {"color": "blue"},
+            "自适应布林下轨": {"color": "red"},
+        },
+        "subplots": {
+            "Z分数": {"Z分数": {"color": "yellow"}, "title": "Z-Score"},
+            "动态倍数": {"动态倍数": {"color": "orange"}, "title": "Dynamic Multiplier"},
+        },
+    }
+
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
         logger.info(f"\n{'='*80}\n开始处理币种: {pair}\n{'='*80}")
