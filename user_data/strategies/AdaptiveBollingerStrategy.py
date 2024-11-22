@@ -68,8 +68,9 @@ class AdaptiveBollingerStrategy(IStrategy):
         dataframe["动态倍数"] = dataframe["Z分数"].rolling(window=n).max().shift()
 
         # 4. 计算自适应布林带
-        dataframe["布林上轨"] = dataframe["中轨"] + dataframe["动态倍数"] * dataframe["标准差"]
-        dataframe["布林下轨"] = dataframe["中轨"] - dataframe["动态倍数"] * dataframe["标准差"]
+        dataframe["自适应布林上轨"] = dataframe["中轨"] + dataframe["动态倍数"] * dataframe["标准差"]
+        dataframe["自适应布林中轨"] = dataframe["中轨"]
+        dataframe["自适应布林下轨"] = dataframe["中轨"] - dataframe["动态倍数"] * dataframe["标准差"]
 
         # 5. 输出计算结果
         if len(dataframe) > 0:
@@ -82,8 +83,9 @@ class AdaptiveBollingerStrategy(IStrategy):
                 f"当前标准差: {last['标准差']:.4f}\n"
                 f"当前Z分数: {last['Z分数']:.4f}\n"
                 f"动态倍数: {last['动态倍数']:.4f}\n"
-                f"布林上轨: {last['布林上轨']:.4f}\n"
-                f"布林下轨: {last['布林下轨']:.4f}"
+                f"布林上轨: {last['自适应布林上轨']:.4f}\n"
+                f"布林中轨: {last['自适应布林中轨']:.4f}\n"
+                f"布林下轨: {last['自适应布林下轨']:.4f}"
             )
         logger.info(f"\n{'-'*40}\n{pair} - 技术指标计算完成\n{'-'*40}")
         return dataframe
@@ -94,14 +96,14 @@ class AdaptiveBollingerStrategy(IStrategy):
 
         # 1. 多头入场条件
         long_cond = (
-            (dataframe["close"] > dataframe["布林上轨"])  # 价格突破上轨
-            & (dataframe["close"].shift(1) <= dataframe["布林上轨"].shift(1))  # 前一根未突破
+            (dataframe["close"] > dataframe["自适应布林上轨"]) &  # 价格突破上轨
+            (dataframe["close"].shift(1) <= dataframe["自适应布林上轨"].shift(1))  # 前一根未突破
         )
 
         # 2. 空头入场条件
         short_cond = (
-            (dataframe["close"] < dataframe["布林下轨"])  # 价格突破下轨
-            & (dataframe["close"].shift(1) >= dataframe["布林下轨"].shift(1))  # 前一根未突破
+            (dataframe["close"] < dataframe["自适应布林下轨"]) &  # 价格突破下轨
+            (dataframe["close"].shift(1) >= dataframe["自适应布林下轨"].shift(1))  # 前一根未突破
         )
 
         # 3. 设置信号
@@ -110,10 +112,23 @@ class AdaptiveBollingerStrategy(IStrategy):
 
         # 4. 只输出最新K线的信号情况
         if len(dataframe) > 0:
+            last = dataframe.iloc[-1]
             if long_cond.iloc[-1]:  # 检查最新K线是否触发多头信号
-                logger.info(f"{pair} - 当前K线触发多头入场信号")
+                logger.info(
+                    f"{pair} - 当前K线触发多头入场信号:\n"
+                    f"收盘价: {last['close']:.4f}\n"
+                    f"布林上轨: {last['自适应布林上轨']:.4f}\n"
+                    f"Z分数: {last['Z分数']:.4f}\n"
+                    f"动态倍数: {last['动态倍数']:.4f}"
+                )
             if short_cond.iloc[-1]:  # 检查最新K线是否触发空头信号
-                logger.info(f"{pair} - 当前K线触发空头入场信号")
+                logger.info(
+                    f"{pair} - 当前K线触发空头入场信号:\n"
+                    f"收盘价: {last['close']:.4f}\n"
+                    f"布林下轨: {last['自适应布林下轨']:.4f}\n"
+                    f"Z分数: {last['Z分数']:.4f}\n"
+                    f"动态倍数: {last['动态倍数']:.4f}"
+                )
 
         logger.info(f"\n{'-'*40}\n{pair} - 入场信号计算完成\n{'-'*40}")
         return dataframe
