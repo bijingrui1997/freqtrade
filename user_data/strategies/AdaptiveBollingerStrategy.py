@@ -6,6 +6,7 @@ from freqtrade.strategy import IStrategy, IntParameter
 import talib.abstract as ta
 import freqtrade.vendor.qtpylib.indicators as qtpylib
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +68,13 @@ class AdaptiveBollingerStrategy(IStrategy):
         dataframe["动态倍数"] = dataframe["Z分数"].rolling(window=n).max().shift()
 
         # 4. 计算自适应布林带
-        dataframe["自适应布林上轨"] = dataframe["中轨"] + dataframe["动态倍数"] * dataframe["标准差"]
+        dataframe["自适应布林上轨"] = (
+            dataframe["中轨"] + dataframe["动态倍数"] * dataframe["标准差"]
+        )
         dataframe["自适应布林中轨"] = dataframe["中轨"]
-        dataframe["自适应布林下轨"] = dataframe["中轨"] - dataframe["动态倍数"] * dataframe["标准差"]
+        dataframe["自适应布林下轨"] = (
+            dataframe["中轨"] - dataframe["动态倍数"] * dataframe["标准差"]
+        )
 
         # 5. 输出计算结果
         if len(dataframe) > 0:
@@ -87,14 +92,14 @@ class AdaptiveBollingerStrategy(IStrategy):
 
         # 1. 多头入场条件
         long_cond = (
-            (dataframe["close"] > dataframe["自适应布林上轨"]) &  # 价格突破上轨
-            (dataframe["close"].shift(1) <= dataframe["自适应布林上轨"].shift(1))  # 前一根未突破
+            (dataframe["close"] > dataframe["自适应布林上轨"])  # 价格突破上轨
+            & (dataframe["close"].shift(1) <= dataframe["自适应布林上轨"].shift(1))  # 前一根未突破
         )
 
         # 2. 空头入场条件
         short_cond = (
-            (dataframe["close"] < dataframe["自适应布林下轨"]) &  # 价格突破下轨
-            (dataframe["close"].shift(1) >= dataframe["自适应布林下轨"].shift(1))  # 前一根未突破
+            (dataframe["close"] < dataframe["自适应布林下轨"])  # 价格突破下轨
+            & (dataframe["close"].shift(1) >= dataframe["自适应布林下轨"].shift(1))  # 前一根未突破
         )
 
         # 3. 设置信号
@@ -138,3 +143,34 @@ class AdaptiveBollingerStrategy(IStrategy):
                 f"平空={1 if exit_short_cond.iloc[-1] else 0}"
             )
         return dataframe
+
+    def custom_stake_amount(
+        self,
+        pair: str,
+        current_time: datetime,
+        current_rate: float,
+        proposed_stake: float,
+        min_stake: Optional[float],
+        max_stake: float,
+        leverage: float,
+        entry_tag: Optional[str],
+        side: str,
+        **kwargs,
+    ) -> float:
+        """
+        自定义每次开仓的金额
+        根据Z分数动态调整开仓金额:
+        - Z分数 > 2.0: 使用50%可用资金
+        - Z分数 > 1.5: 使用30%可用资金
+        - 其他情况: 使用10%可用资金
+        """
+        dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
+        current_candle = dataframe.iloc[-1]
+
+        # Z分数越大,说明突破越明显,加大仓位
+        if current_candle["Z分数"] > 2.0:
+            return max_stake * 0.5  # 强势突破,使用50%资金
+        elif current_candle["Z分数"] > 1.5:
+            return max_stake * 0.3  # 中等突破,使用30%资金
+        else:
+            return max_stake * 0.1  # 弱势突破,使用10%资金

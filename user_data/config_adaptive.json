@@ -1,9 +1,9 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
-    "max_open_trades": 13,
+    "max_open_trades": 1,
     "stake_currency": "USDT",
     "stake_amount": "unlimited",
-    "tradable_balance_ratio": 0.99,
+    "tradable_balance_ratio": 0.8,
     "fiat_display_currency": "USD",
     "dry_run": true,
     "dry_run_wallet": 10000,
@@ -20,12 +20,7 @@
     "entry_pricing": {
         "price_side": "same",
         "use_order_book": true,
-        "order_book_top": 1,
-        "price_last_balance": 0.0,
-        "check_depth_of_market": {
-            "enabled": false,
-            "bids_to_ask_delta": 1
-        }
+        "order_book_top": 1
     },
     "exit_pricing": {
         "price_side": "same",
@@ -43,19 +38,7 @@
         },
         "ccxt_async_config": {},
         "pair_whitelist": [
-            "BTC/USDT:USDT",
-            "ETH/USDT:USDT",
-            "SOL/USDT:USDT",
-            "XRP/USDT:USDT",
-            "ADA/USDT:USDT",
-            "AVAX/USDT:USDT",
-            "DOT/USDT:USDT",
-            "LINK/USDT:USDT",
-            "DOGE/USDT:USDT",
-            "ATOM/USDT:USDT",
-            "UNI/USDT:USDT",
-            "LTC/USDT:USDT",
-            "OP/USDT:USDT"
+            "ETH/USDT:USDT"
         ],
         "pair_blacklist": [
             "BNB/.*",
@@ -74,7 +57,13 @@
     "telegram": {
         "enabled": false,
         "token": "",
-        "chat_id": ""
+        "chat_id": "",
+        "notification_settings": {
+            "entry_fill": "off",
+            "exit_fill": "on",
+            "protection_trigger": "on",
+            "protection_trigger_global": "on"
+        }
     },
     "api_server": {
         "enabled": true,
@@ -94,5 +83,7 @@
     "internals": {
         "process_throttle_secs": 5
     },
-    "position_adjustment_enable": false
+    "position_adjustment_enable": false,
+    "amend_last_stake_amount": true,
+    "last_stake_amount_min_ratio": 0.5
 }

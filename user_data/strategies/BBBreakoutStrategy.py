@@ -65,24 +65,18 @@ class BBBreakoutStrategy(IStrategy):
         logger.info(f"{pair} - 布林带参数: 周期={self.bb_period.value}, 倍数={self.bb_std.value}")
 
         # 2. 基础指标赋值
-        dataframe["布林上轨"] = bb["upper"]
-        dataframe["布林中轨"] = bb["mid"]
-        dataframe["布林下轨"] = bb["lower"]
+        dataframe["BB布林上轨"] = bb["upper"]
+        dataframe["BB布林中轨"] = bb["mid"]
+        dataframe["BB布林下轨"] = bb["lower"]
 
-        # 3. 计算布林带宽度
-        dataframe["带宽"] = (bb["upper"] - bb["lower"]) / bb["mid"]
-
-        # 4. 计算成交量指标
-        dataframe["成交量均值"] = dataframe["volume"].rolling(window=20).mean()
-        dataframe["成交量比例"] = dataframe["volume"] / dataframe["成交量均值"]
-
-        # 5. 输出计算结果
+        # 3. 输出计算结果
         if len(dataframe) > 0:
             last = dataframe.iloc[-1]
             logger.info(
-                f"{pair} - 计算指标: 收盘价={last['close']:.4f}, 中轨={last['布林中轨']:.4f}, "
-                f"上轨={last['布林上轨']:.4f}, 下轨={last['布林下轨']:.4f}, "
-                f"带宽={last['带宽']:.4f}, 成交量比={last['成交量比例']:.2f}"
+                f"{pair} - 计算指标: 收盘价={last['close']:.4f}, "
+                f"中轨={last['BB布林中轨']:.4f}, "
+                f"上轨={last['BB布林上轨']:.4f}, "
+                f"下轨={last['BB布林下轨']:.4f}"
             )
         return dataframe
 
@@ -110,12 +104,11 @@ class BBBreakoutStrategy(IStrategy):
 
         # 4. 输出最新K线的信号值
         if len(dataframe) > 0:
-            if long_cond.iloc[-1] or short_cond.iloc[-1]:
-                logger.info(
-                    f"{metadata['pair']} - 计算开仓信号: "
-                    f"多头={1 if long_cond.iloc[-1] else 0}, "
-                    f"空头={1 if short_cond.iloc[-1] else 0}"
-                )
+            logger.info(
+                f"{metadata['pair']} - 计算开仓信号: "
+                f"多头={1 if long_cond.iloc[-1] else 0}, "
+                f"空头={1 if short_cond.iloc[-1] else 0}"
+            )
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
@@ -138,10 +131,9 @@ class BBBreakoutStrategy(IStrategy):
 
         # 4. 只输出平仓信号
         if len(dataframe) > 0:
-            if exit_long_cond.iloc[-1] or exit_short_cond.iloc[-1]:
-                logger.info(
-                    f"{metadata['pair']} - 计算平仓信号: "
-                    f"平多={1 if exit_long_cond.iloc[-1] else 0}, "
-                    f"平空={1 if exit_short_cond.iloc[-1] else 0}"
-                )
+            logger.info(
+                f"{metadata['pair']} - 计算平仓信号: "
+                f"平多={1 if exit_long_cond.iloc[-1] else 0}, "
+                f"平空={1 if exit_short_cond.iloc[-1] else 0}"
+            )
         return dataframe
