@@ -53,8 +53,7 @@ class AdaptiveBollingerStrategy(IStrategy):
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
-        logger.info(f"\n{'='*80}\n开始处理币种: {pair}\n{'='*80}")
-        logger.info(f"\n{'-'*40}\n{pair} - 开始计算技术指标\n{'-'*40}")
+        logger.info(f"\n{'='*80}\n{pair} - 开始本币流程\n{'='*80}")
 
         # 1. 计算基础指标
         n = self.bb_period.value
@@ -76,23 +75,15 @@ class AdaptiveBollingerStrategy(IStrategy):
         if len(dataframe) > 0:
             last = dataframe.iloc[-1]
             logger.info(
-                f"{pair} - 技术指标计算完成:\n"
-                f"时间: {last['date']}\n"
-                f"收盘价: {last['close']:.4f}\n"
-                f"中轨: {last['中轨']:.4f}\n"
-                f"当前标准差: {last['标准差']:.4f}\n"
-                f"当前Z分数: {last['Z分数']:.4f}\n"
-                f"动态倍数: {last['动态倍数']:.4f}\n"
-                f"布林上轨: {last['自适应布林上轨']:.4f}\n"
-                f"布林中轨: {last['自适应布林中轨']:.4f}\n"
-                f"布林下轨: {last['自适应布林下轨']:.4f}"
+                f"{pair} - 计算指标: 收盘价={last['close']:.4f}, 中轨={last['中轨']:.4f}, "
+                f"Z分数={last['Z分数']:.4f}, 动态倍数={last['动态倍数']:.4f}, "
+                f"上轨={last['自适应布林上轨']:.4f}, 下轨={last['自适应布林下轨']:.4f}"
             )
-        logger.info(f"\n{'-'*40}\n{pair} - 技术指标计算完成\n{'-'*40}")
         return dataframe
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
-        logger.info(f"\n{'-'*40}\n{pair} - 开始计算入场信号\n{'-'*40}")
+        logger.info(f"{pair} - 开始计算入场信号")
 
         # 1. 多头入场条件
         long_cond = (
@@ -110,32 +101,18 @@ class AdaptiveBollingerStrategy(IStrategy):
         dataframe.loc[long_cond, ["enter_long", "enter_tag"]] = (1, "突破自适应布林上轨")
         dataframe.loc[short_cond, ["enter_short", "enter_tag"]] = (1, "突破自适应布林下轨")
 
-        # 4. 只输出最新K线的信号情况
+        # 4. 输出最新K线的信号值
         if len(dataframe) > 0:
-            last = dataframe.iloc[-1]
-            if long_cond.iloc[-1]:  # 检查最新K线是否触发多头信号
-                logger.info(
-                    f"{pair} - 当前K线触发多头入场信号:\n"
-                    f"收盘价: {last['close']:.4f}\n"
-                    f"布林上轨: {last['自适应布林上轨']:.4f}\n"
-                    f"Z分数: {last['Z分数']:.4f}\n"
-                    f"动态倍数: {last['动态倍数']:.4f}"
-                )
-            if short_cond.iloc[-1]:  # 检查最新K线是否触发空头信号
-                logger.info(
-                    f"{pair} - 当前K线触发空头入场信号:\n"
-                    f"收盘价: {last['close']:.4f}\n"
-                    f"布林下轨: {last['自适应布林下轨']:.4f}\n"
-                    f"Z分数: {last['Z分数']:.4f}\n"
-                    f"动态倍数: {last['动态倍数']:.4f}"
-                )
-
-        logger.info(f"\n{'-'*40}\n{pair} - 入场信号计算完成\n{'-'*40}")
+            logger.info(
+                f"{metadata['pair']} - 计算开仓信号: "
+                f"多头={1 if long_cond.iloc[-1] else 0}, "
+                f"空头={1 if short_cond.iloc[-1] else 0}"
+            )
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
-        logger.info(f"\n{'-'*40}\n{pair} - 开始计算出场信号\n{'-'*40}")
+        logger.info(f"{pair} - 开始计算出场信号")
 
         # 1. 多头出场条件
         exit_long_cond = (
@@ -153,13 +130,11 @@ class AdaptiveBollingerStrategy(IStrategy):
         dataframe.loc[exit_long_cond, ["exit_long", "exit_tag"]] = (1, "跌破布林中轨")
         dataframe.loc[exit_short_cond, ["exit_short", "exit_tag"]] = (1, "突破布林中轨")
 
-        # 4. 只输出最新K线的信号情况
+        # 4. 只输出平仓信号
         if len(dataframe) > 0:
-            if exit_long_cond.iloc[-1]:  # 检查最新K线是否触发多头出场信号
-                logger.info(f"{pair} - 当前K线触发多头出场信号")
-            if exit_short_cond.iloc[-1]:  # 检查最新K线是否触发空头出场信号
-                logger.info(f"{pair} - 当前K线触发空头出场信号")
-
-        logger.info(f"\n{'-'*40}\n{pair} - 出场信号计算完成\n{'-'*40}")
-        logger.info(f"\n{'='*80}\n{pair} - 处理完成\n{'='*80}")
+            logger.info(
+                f"{metadata['pair']} - 计算平仓信号: "
+                f"平多={1 if exit_long_cond.iloc[-1] else 0}, "
+                f"平空={1 if exit_short_cond.iloc[-1] else 0}"
+            )
         return dataframe
