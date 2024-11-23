@@ -52,6 +52,8 @@ class AdaptiveBollingerStrategy(IStrategy):
         },
     }
 
+    can_short = True  # 允许做空
+
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
         logger.info(f"\n{'='*80}\n{pair} - 开始本币流程\n{'='*80}")
@@ -169,8 +171,23 @@ class AdaptiveBollingerStrategy(IStrategy):
 
         # Z分数越大,说明突破越明显,加大仓位
         if current_candle["Z分数"] > 2.0:
-            return max_stake * 0.5  # 强势突破,使用50%资金
+            stake = max_stake * 0.5  # 强势突破,使用50%资金
+            logger.info(
+                f"{pair} - 强势突破信号 Z分数={current_candle['Z分数']:.4f}, "
+                f"建议仓位={proposed_stake:.2f}, 调整后={stake:.2f} ({stake/max_stake*100:.0f}%资金)"
+            )
+            return stake
         elif current_candle["Z分数"] > 1.5:
-            return max_stake * 0.3  # 中等突破,使用30%资金
+            stake = max_stake * 0.3  # 中等突破,使用30%资金
+            logger.info(
+                f"{pair} - 中等突破信号 Z分数={current_candle['Z分数']:.4f}, "
+                f"建议仓位={proposed_stake:.2f}, 调整后={stake:.2f} ({stake/max_stake*100:.0f}%资金)"
+            )
+            return stake
         else:
-            return max_stake * 0.1  # 弱势突破,使用10%资金
+            stake = max_stake * 0.1  # 弱势突破,使用10%资金
+            logger.info(
+                f"{pair} - 弱势突破信号 Z分数={current_candle['Z分数']:.4f}, "
+                f"建议仓位={proposed_stake:.2f}, 调整后={stake:.2f} ({stake/max_stake*100:.0f}%资金)"
+            )
+            return stake
